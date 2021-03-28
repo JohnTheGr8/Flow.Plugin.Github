@@ -1,8 +1,7 @@
 namespace Wox.Plugin.Github
 
-open Wox.Plugin
+open Flow.Launcher.Plugin
 open System.Collections.Generic
-open System.Diagnostics
 open Humanizer
 
 type ActionForQuery =
@@ -38,7 +37,7 @@ type GithubPlugin() =
     let mutable pluginContext = PluginInitContext()
 
     let openUrl (url:string) =
-        Process.Start url |> ignore
+        do SharedCommands.SearchWeb.NewTabInBrowser url |> ignore
         true
 
     let changeQuery (newQuery:string) (newParam:string) =

@@ -20,10 +20,10 @@ build_script:
 
 after_build:
 - ps: >-
-    Compress-Archive -Path "src\bin\Release\net462\*" -DestinationPath "plugin.zip"
+    Compress-Archive -Path "src\bin\Release\netcoreapp3.1\*" -DestinationPath "plugin.zip"
 
-    Rename-Item plugin.zip Wox.Plugin.Github.wox
+    Rename-Item plugin.zip Flow.Plugin.Github.zip
 
 artifacts:
     - path: 'src\bin\Release\*.nupkg'
-    - path: '*.wox'
+    - path: '*.zip'
