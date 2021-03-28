@@ -2,12 +2,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>Wox.Plugin.Github</AssemblyName>
-    <PackageId>Wox.Plugin.Github</PackageId>
+    <AssemblyName>Flow.Plugin.Github</AssemblyName>
+    <PackageId>Flow.Plugin.Github</PackageId>
     <Authors>Ioannis G. (@JohnTheGr8)</Authors>
-    <PackageProjectUrl>https://github.com/JohnTheGr8/Wox.Plugin.Github</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/JohnTheGr8/Wox.Plugin.Github</RepositoryUrl>
-    <PackageTags>wox wox-plugin</PackageTags>
+    <PackageProjectUrl>https://github.com/JohnTheGr8/Flow.Plugin.Github</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/JohnTheGr8/Flow.Plugin.Github</RepositoryUrl>
+    <PackageTags>flow-launcher flow-plugin</PackageTags>
     <Version>1.2.1</Version>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>

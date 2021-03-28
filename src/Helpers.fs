@@ -1,5 +1,5 @@
 [<AutoOpen>]
-module Wox.Plugin.Github.Helpers
+module Flow.Plugin.Github.Helpers
 
 open System
 open System.IO

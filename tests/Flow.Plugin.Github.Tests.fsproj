@@ -8,7 +8,7 @@
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\src\Wox.Plugin.Github.fsproj" />
+    <ProjectReference Include="..\src\Flow.Plugin.Github.fsproj" />
     <PackageReference Include="Expecto" Version="9.0.0" />
     <PackageReference Update="FSharp.Core" Version="4.7.1" />
     <PackageReference Update="System.ValueTuple" Version="4.5.0" />

@@ -14,7 +14,7 @@ build_script:
 
     dotnet restore
 
-    dotnet run -c Release -p ./tests/Wox.Plugin.Github.Tests.fsproj -- --summary --colours 0
+    dotnet run -c Release -p ./tests/Flow.Plugin.Github.Tests.fsproj -- --summary --colours 0
 
     dotnet pack -c Release
 

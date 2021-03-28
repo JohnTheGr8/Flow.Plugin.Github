@@ -1,4 +1,4 @@
-namespace Wox.Plugin.Github
+namespace Flow.Plugin.Github
 
 open Octokit
 
@@ -75,7 +75,7 @@ module GithubApi =
 
     let private getClient () = 
         let productHeader = 
-            ProductHeaderValue "Wox.Plugin.Github"
+            ProductHeaderValue "Flow.Plugin.Github"
 
         match tryLoadGithubToken () with
         | Some token -> GitHubClient(productHeader, Credentials = Credentials token)

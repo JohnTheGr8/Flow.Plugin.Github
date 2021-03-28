@@ -1,4 +1,4 @@
-namespace Wox.Plugin.Github
+namespace Flow.Plugin.Github
 
 open Flow.Launcher.Plugin
 open System.Collections.Generic

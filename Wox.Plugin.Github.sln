@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Wox.Plugin.Github", "src\Wox.Plugin.Github.fsproj", "{6C22CFFE-6B35-46EC-9087-ABE149C4A575}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Flow.Plugin.Github", "src\Flow.Plugin.Github.fsproj", "{6C22CFFE-6B35-46EC-9087-ABE149C4A575}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

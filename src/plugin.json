@@ -1,12 +1,12 @@
 ﻿{
   "ID": "6c22cffe6b3546ec9087abe149c4a575",
   "ActionKeyword": "gh",
-  "Name": "Wox.Plugin.Github",
+  "Name": "Flow.Plugin.Github",
   "Description": "Search Github repositories and users, browse issues and PRs",
   "Author": "Ioannis G. (@JohnTheGr8)",
   "Version": "1.2.1",
-  "Language": "csharp",
-  "Website": "https://github.com/JohnTheGr8/Wox.Plugin.Github",
+  "Language": "fsharp",
+  "Website": "https://github.com/JohnTheGr8/Flow.Plugin.Github",
   "IcoPath": "icon.png",
-  "ExecuteFileName": "Wox.Plugin.Github.dll"
+  "ExecuteFileName": "Flow.Plugin.Github.dll"
 }

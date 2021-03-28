@@ -1,8 +1,8 @@
-module Wox.Plugin.Github.Tests
+module Flow.Plugin.Github.Tests
 
 open Expecto
 open Expecto.Flip
-open Wox.Plugin.Github
+open Flow.Plugin.Github
 
 let plugin = GithubPlugin()
 

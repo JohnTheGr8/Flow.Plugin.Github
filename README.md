@@ -1,13 +1,13 @@
-Wox.Plugin.Github [![Build status](https://ci.appveyor.com/api/projects/status/pfq56cm1rcui0crp?svg=true)](https://ci.appveyor.com/project/JohnTheGr8/wox-plugin-github)
+Flow.Plugin.Github [![Build status](https://ci.appveyor.com/api/projects/status/6gonqqny035188wj?svg=true)](https://ci.appveyor.com/project/JohnTheGr8/flow-plugin-github)
 ==================
 
-Github plugin for the [Wox launcher](https://github.com/Wox-launcher/Wox)
+Github plugin for the [Flow launcher](https://github.com/Flow-Launcher/Flow.Launcher)
 
 ### About
 
 Search Github repositories, navigate repository issues and pull requests, directly from Wox.
 
-![demo gif](http://i.imgur.com/ZL14NKU.gif)
+![demo gif](https://i.imgur.com/kHGbBQI.gif)
 
 ### Usage
 
