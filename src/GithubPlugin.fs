@@ -34,13 +34,12 @@ type GithubPlugin() =
         | "users" -> Some(FindUsers)
         | _ -> None
 
-    let parseQuery (searchTerm: Query) =
-        match (searchTerm.FirstSearch, searchTerm.SecondToEndSearch) with
-        | GeneralSearchFormat keywordFunc, search when search.Length > 0 -> search |> keywordFunc |> runApiSearch
-        | SpecificSearchFormat keywordFunc, UserRepoFormat search
-        | UserRepoFormat search, SpecificSearchFormat keywordFunc -> search |> keywordFunc |> runApiSearch
-        | UserRepoFormat (u, r), IssueFormat i -> runApiSearch (FindIssue(u, r, i))
-        | search, "" -> SuggestQuery(SearchRepos search)
+    let parseQuery = function
+        | [GeneralSearchFormat keywordFunc; search] when search.Length > 0 -> search |> keywordFunc |> runApiSearch
+        | [SpecificSearchFormat keywordFunc; UserRepoFormat search]
+        | [UserRepoFormat search; SpecificSearchFormat keywordFunc] -> search |> keywordFunc |> runApiSearch
+        | [UserRepoFormat (u, r); IssueFormat i] -> runApiSearch (FindIssue(u, r, i))
+        | [search; ""] -> SuggestQuery(SearchRepos search)
         | _ -> SuggestQuery DefaultSuggestion
 
     let mutable pluginContext = PluginInitContext()
@@ -136,34 +135,16 @@ type GithubPlugin() =
         | _ ->
             [ defaultResult ]
 
-    let tryRunApiSearch (result: Async<ApiSearchResult>) =
+    let tryRunApiSearch fSearch =
         async {
-            let! res = result |> Async.Catch
-
-            return
-                match res with
-                | Choice1Of2 result -> presentApiSearchResult result
-                | Choice2Of2 exn -> presentApiSearchExn exn
+            match! fSearch |> Async.Catch with
+            | Choice1Of2 result -> return presentApiSearchResult result
+            | Choice2Of2 exn -> return presentApiSearchExn exn
         }
     member this.ProcessQuery terms =
-        async {
-            let! res =
-                match parseQuery terms with
-                | RunApiSearch fSearch -> tryRunApiSearch fSearch
-                | SuggestQuery suggestion -> async { return presentSuggestion suggestion }
-
-            return
-                res
-                |> List.map
-                    (fun r ->
-                        Result(
-                            Title = r.title,
-                            SubTitle = r.subtitle,
-                            IcoPath = "icon.png",
-                            Action = fun x -> r.action x
-                        ))
-                |> List<Result>
-        }
+        match parseQuery terms with
+        | RunApiSearch fSearch -> tryRunApiSearch fSearch
+        | SuggestQuery suggestion -> presentSuggestion suggestion |> async.Return
 
     interface IAsyncPlugin with
         member this.InitAsync(context: PluginInitContext) =
@@ -174,4 +155,13 @@ type GithubPlugin() =
 
 
         member this.QueryAsync(query, token: CancellationToken) =
-            Async.StartImmediateAsTask(this.ProcessQuery query, token)
+            let ghSearch = async {
+                let! results = 
+                    [query.FirstSearch; query.SecondToEndSearch]
+                    |> this.ProcessQuery
+                
+                return results
+                       |> List.map (fun r -> Result( Title = r.title, SubTitle = r.subtitle, IcoPath = "icon.png", Action = fun x -> r.action x ))
+                       |> List<Result>
+            }
+            Async.StartImmediateAsTask(ghSearch, token)
