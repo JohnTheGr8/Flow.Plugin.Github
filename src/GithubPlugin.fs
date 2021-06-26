@@ -25,6 +25,7 @@ type GithubPlugin() =
         | "issues" -> Some(FindIssues)
         | "pr"
         | "pull" -> Some(FindPRs)
+        | ""
         | "repo" -> Some(FindRepo)
         | _ -> None
 
@@ -39,6 +40,7 @@ type GithubPlugin() =
         | [SpecificSearchFormat keywordFunc; UserRepoFormat search]
         | [UserRepoFormat search; SpecificSearchFormat keywordFunc] -> search |> keywordFunc |> runApiSearch
         | [UserRepoFormat (u, r); IssueFormat i] -> runApiSearch (FindIssue(u, r, i))
+        | [UserReposFormat search; ""] -> runApiSearch (FindUserRepos(search))
         | [search; ""] -> SuggestQuery(SearchRepos search)
         | _ -> SuggestQuery DefaultSuggestion
 
