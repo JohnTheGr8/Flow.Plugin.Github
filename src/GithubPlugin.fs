@@ -1,5 +1,7 @@
 namespace Flow.Plugin.Github
 
+open System.Threading
+open System.Threading.Tasks
 open Flow.Launcher.Plugin
 open System.Collections.Generic
 open Humanizer
@@ -18,21 +20,28 @@ type GithubPlugin() =
 
     let runApiSearch = Gh.runSearchCached >> RunApiSearch
 
-    let parseQuery = function
-        | [ "repos"; search ]                     -> runApiSearch (FindRepos search)
-        | [ "users"; search ]                     -> runApiSearch (FindUsers search)
-        | [ "issues"; UserRepoFormat search ]     -> runApiSearch (FindIssues search)
-        | [ "pr";     UserRepoFormat search ]     -> runApiSearch (FindPRs search)
-        | [ "pull";   UserRepoFormat search ]     -> runApiSearch (FindPRs search)
-        | [ "repo";   UserRepoFormat search ]     -> runApiSearch (FindRepo search)
-        | [ UserRepoFormat search           ]     -> runApiSearch (FindRepo search)
-        | [ UserRepoFormat search; "issues" ]     -> runApiSearch (FindIssues search)
-        | [ UserRepoFormat search; "pr"     ]     -> runApiSearch (FindPRs search)
-        | [ UserRepoFormat search; "pull"   ]     -> runApiSearch (FindPRs search)
-        | [ UserRepoFormat (u,r); IssueFormat i ] -> runApiSearch (FindIssue (u,r,i))
-        | [ UserReposFormat user ]                -> runApiSearch (FindUserRepos user)
-        | [ search ]                              -> SuggestQuery (SearchRepos search)
-        | _                                       -> SuggestQuery DefaultSuggestion
+    let (|SpecificSearchFormat|_|) keyword =
+        match keyword with
+        | "issues" -> Some(FindIssues)
+        | "pr"
+        | "pull" -> Some(FindPRs)
+        | "repo" -> Some(FindRepo)
+        | _ -> None
+
+    let (|GeneralSearchFormat|_|) keyword =
+        match keyword with
+        | "repos" -> Some(FindRepos)
+        | "users" -> Some(FindUsers)
+        | _ -> None
+
+    let parseQuery (searchTerm: Query) =
+        match (searchTerm.FirstSearch, searchTerm.SecondToEndSearch) with
+        | GeneralSearchFormat keywordFunc, search when search.Length > 0 -> search |> keywordFunc |> runApiSearch
+        | SpecificSearchFormat keywordFunc, UserRepoFormat search
+        | UserRepoFormat search, SpecificSearchFormat keywordFunc -> search |> keywordFunc |> runApiSearch
+        | UserRepoFormat (u, r), IssueFormat i -> runApiSearch (FindIssue(u, r, i))
+        | search, "" -> SuggestQuery(SearchRepos search)
+        | _ -> SuggestQuery DefaultSuggestion
 
     let mutable pluginContext = PluginInitContext()
 
@@ -127,27 +136,42 @@ type GithubPlugin() =
         | _ ->
             [ defaultResult ]
 
-    let tryRunApiSearch =
-           Async.Catch
-        >> Async.RunSynchronously
-        >> function
-            | Choice1Of2 result -> presentApiSearchResult result
-            | Choice2Of2 exn -> presentApiSearchExn exn
+    let tryRunApiSearch (result: Async<ApiSearchResult>) =
+        async {
+            let! res = result |> Async.Catch
 
+            return
+                match res with
+                | Choice1Of2 result -> presentApiSearchResult result
+                | Choice2Of2 exn -> presentApiSearchExn exn
+        }
     member this.ProcessQuery terms =
-        match parseQuery terms with
-        | RunApiSearch fSearch -> tryRunApiSearch fSearch
-        | SuggestQuery suggestion -> presentSuggestion suggestion
+        async {
+            let! res =
+                match parseQuery terms with
+                | RunApiSearch fSearch -> tryRunApiSearch fSearch
+                | SuggestQuery suggestion -> async { return presentSuggestion suggestion }
 
-    interface IPlugin with
-        member this.Init (context:PluginInitContext) =
+            return
+                res
+                |> List.map
+                    (fun r ->
+                        Result(
+                            Title = r.title,
+                            SubTitle = r.subtitle,
+                            IcoPath = "icon.png",
+                            Action = fun x -> r.action x
+                        ))
+                |> List<Result>
+        }
+
+    interface IAsyncPlugin with
+        member this.InitAsync(context: PluginInitContext) =
             Helpers.githubTokenFileDir <- context.CurrentPluginMetadata.PluginDirectory
-            pluginContext <- context
 
-        member this.Query (query:Query) =
-            query.Terms
-            |> List.ofArray
-            |> List.skip 1
-            |> this.ProcessQuery
-            |> List.map (fun r -> Result( Title = r.title, SubTitle = r.subtitle, IcoPath = "icon.png", Action = fun x -> r.action x ))
-            |> List<Result>
+            pluginContext <- context
+            Task.CompletedTask
+
+
+        member this.QueryAsync(query, token: CancellationToken) =
+            Async.StartImmediateAsTask(this.ProcessQuery query, token)
