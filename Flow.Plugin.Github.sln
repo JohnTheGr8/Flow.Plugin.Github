@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Flow.Plugin.Github", "src\Flow.Plugin.Github.fsproj", "{6C22CFFE-6B35-46EC-9087-ABE149C4A575}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Flow.Plugin.Github.Tests", "tests\Flow.Plugin.Github.Tests.fsproj", "{5DC343BA-9AB0-4091-9BD2-5EFC08CC9FC1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{6C22CFFE-6B35-46EC-9087-ABE149C4A575}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C22CFFE-6B35-46EC-9087-ABE149C4A575}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C22CFFE-6B35-46EC-9087-ABE149C4A575}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DC343BA-9AB0-4091-9BD2-5EFC08CC9FC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DC343BA-9AB0-4091-9BD2-5EFC08CC9FC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DC343BA-9AB0-4091-9BD2-5EFC08CC9FC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DC343BA-9AB0-4091-9BD2-5EFC08CC9FC1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
