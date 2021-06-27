@@ -25,7 +25,6 @@ type GithubPlugin() =
         | "issues" -> Some(FindIssues)
         | "pr"
         | "pull" -> Some(FindPRs)
-        | ""
         | "repo" -> Some(FindRepo)
         | _ -> None
 
@@ -36,13 +35,13 @@ type GithubPlugin() =
         | _ -> None
 
     let parseQuery = function
-        | [GeneralSearchFormat keywordFunc; search] when search.Length > 0 -> search |> keywordFunc |> runApiSearch
+        | GeneralSearchFormat keywordFunc::search when search.Length > 0 -> search |> String.concat " " |> keywordFunc |> runApiSearch
         | [SpecificSearchFormat keywordFunc; UserRepoFormat search]
         | [UserRepoFormat search; SpecificSearchFormat keywordFunc] -> search |> keywordFunc |> runApiSearch
+        | [UserRepoFormat search] -> search |> FindRepo |> runApiSearch
         | [UserRepoFormat (u, r); IssueFormat i] -> runApiSearch (FindIssue(u, r, i))
-        | [UserReposFormat search; ""] -> runApiSearch (FindUserRepos(search))
-        | [search; ""] -> SuggestQuery(SearchRepos search)
-        | _ -> SuggestQuery DefaultSuggestion
+        | [UserReposFormat search;] -> search |> FindUserRepos|> runApiSearch
+        | search -> search |> String.concat " "|> SearchRepos |> SuggestQuery
 
     let mutable pluginContext = PluginInitContext()
 
@@ -156,10 +155,12 @@ type GithubPlugin() =
             Task.CompletedTask
 
 
-        member this.QueryAsync(query, token: CancellationToken) =
+        member this.QueryAsync(query:Query, token: CancellationToken) =
             let ghSearch = async {
                 let! results = 
-                    [query.FirstSearch; query.SecondToEndSearch]
+                    query.Terms
+                    |> List.ofArray
+                    |> List.skip(if query.ActionKeyword = Query.GlobalPluginWildcardSign then 0 else 1)
                     |> this.ProcessQuery
                 
                 return results

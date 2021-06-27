@@ -16,7 +16,7 @@ let allTests =
 
         testAsync "search suggestions" {
             // should return search suggestions
-            let! results = plugin.ProcessQuery [ "some-search-term"; "" ]
+            let! results = plugin.ProcessQuery [ "some-search-term"; ]
             let result1 = results |> List.tryItem 0 |> Expect.wantSome "result 1 should exist"
             let result2 = results |> List.tryItem 1 |> Expect.wantSome "result 2 should exist"
 
@@ -30,21 +30,19 @@ let allTests =
             // should return a list of repositories
             let! res = plugin.ProcessQuery [ "repos"; "wox" ]
             
-            res|>
-            Expect.isNonEmpty "should not be empty"
+            res |> Expect.isNonEmpty "should not be empty"
         }
 
         testAsync "user search" {
             // should return a list of users
             let! res = plugin.ProcessQuery [ "users"; "john" ]
             
-            res |>
-            Expect.isNonEmpty "should not be empty"
+            res |> Expect.isNonEmpty "should not be empty"
         }
 
         testAsync "user repo search" {
             // should return a list of repositories owned by wox-launcher
-            let! results = plugin.ProcessQuery [ "wox-launcher/"; "" ]
+            let! results = plugin.ProcessQuery [ "wox-launcher/"; ]
             
             results |> Expect.isNonEmpty "should not be empty"
 
@@ -92,7 +90,7 @@ let allTests =
 
         testAsync "repo details alt format" {
             // should return stats/issues/PRs
-            let! results1 = plugin.ProcessQuery [ "wox-launcher/wox"; "" ]
+            let! results1 = plugin.ProcessQuery [ "wox-launcher/wox"; ]
             let! results2 = plugin.ProcessQuery [ "repo"; "wox-launcher/wox" ]
 
             for result1, result2 in List.zip results1 results2 do
