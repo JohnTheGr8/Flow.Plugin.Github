@@ -33,6 +33,17 @@ let allTests =
             res |> Expect.isNonEmpty "should not be empty"
         }
 
+        testAsync "repo search with spaces" {
+            let! results1 = plugin.ProcessQuery [ "repos"; "launcher"; "flow" ]
+            let! results2 = plugin.ProcessQuery [ "repos"; "launcher"; "wox" ]
+
+            let res1 = results1 |> List.tryHead |> Expect.wantSome "first query should return at least one result"
+            let res2 = results2 |> List.tryHead |> Expect.wantSome "second query should return at least one result"
+
+            (res1.title,    res2.title)    ||> Expect.notEqual "titles should not match"
+            (res1.subtitle, res2.subtitle) ||> Expect.notEqual "subtitles should not match"
+        }
+
         testAsync "user search" {
             // should return a list of users
             let! res = plugin.ProcessQuery [ "users"; "john" ]
