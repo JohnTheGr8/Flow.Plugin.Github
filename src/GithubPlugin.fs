@@ -1,5 +1,7 @@
 namespace Flow.Plugin.Github
 
+open System.Threading
+open System.Threading.Tasks
 open Flow.Launcher.Plugin
 open System.Collections.Generic
 open Humanizer
@@ -19,8 +21,8 @@ type GithubPlugin() =
     let runApiSearch = Gh.runSearchCached >> RunApiSearch
 
     let parseQuery = function
-        | [ "repos"; search ]                     -> runApiSearch (FindRepos search)
-        | [ "users"; search ]                     -> runApiSearch (FindUsers search)
+        | "repos" :: search                       -> runApiSearch (FindRepos (String.concat " " search))
+        | "users" :: search                       -> runApiSearch (FindUsers (String.concat " " search))
         | [ "issues"; UserRepoFormat search ]     -> runApiSearch (FindIssues search)
         | [ "pr";     UserRepoFormat search ]     -> runApiSearch (FindPRs search)
         | [ "pull";   UserRepoFormat search ]     -> runApiSearch (FindPRs search)
@@ -127,27 +129,34 @@ type GithubPlugin() =
         | _ ->
             [ defaultResult ]
 
-    let tryRunApiSearch =
-           Async.Catch
-        >> Async.RunSynchronously
-        >> function
-            | Choice1Of2 result -> presentApiSearchResult result
-            | Choice2Of2 exn -> presentApiSearchExn exn
-
+    let tryRunApiSearch fSearch =
+        async {
+            match! fSearch |> Async.Catch with
+            | Choice1Of2 result -> return presentApiSearchResult result
+            | Choice2Of2 exn -> return presentApiSearchExn exn
+        }
     member this.ProcessQuery terms =
         match parseQuery terms with
         | RunApiSearch fSearch -> tryRunApiSearch fSearch
-        | SuggestQuery suggestion -> presentSuggestion suggestion
+        | SuggestQuery suggestion -> presentSuggestion suggestion |> async.Return
 
-    interface IPlugin with
-        member this.Init (context:PluginInitContext) =
+    interface IAsyncPlugin with
+        member this.InitAsync(context: PluginInitContext) =
             Helpers.githubTokenFileDir <- context.CurrentPluginMetadata.PluginDirectory
-            pluginContext <- context
 
-        member this.Query (query:Query) =
-            query.Terms
-            |> List.ofArray
-            |> List.skip 1
-            |> this.ProcessQuery
-            |> List.map (fun r -> Result( Title = r.title, SubTitle = r.subtitle, IcoPath = "icon.png", Action = fun x -> r.action x ))
-            |> List<Result>
+            pluginContext <- context
+            Task.CompletedTask
+
+        member this.QueryAsync(query: Query, token: CancellationToken) =
+            let ghSearch = async {
+                let! results = 
+                    query.Terms
+                    |> List.ofArray
+                    |> List.skip (if query.ActionKeyword = Query.GlobalPluginWildcardSign then 0 else 1)
+                    |> this.ProcessQuery
+                
+                return results
+                       |> List.map (fun r -> Result( Title = r.title, SubTitle = r.subtitle, IcoPath = "icon.png", Action = fun x -> r.action x ))
+                       |> List<Result>
+            }
+            Async.StartImmediateAsTask(ghSearch, token)
