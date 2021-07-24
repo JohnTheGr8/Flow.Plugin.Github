@@ -20,7 +20,7 @@ build_script:
 
 after_build:
 - ps: >-
-    Compress-Archive -Path "src\bin\Release\netcoreapp3.1\*" -DestinationPath "plugin.zip"
+    Compress-Archive -Path "src\bin\Release\net5.0-windows\*" -DestinationPath "plugin.zip"
 
     Rename-Item plugin.zip Flow.Plugin.Github.zip
 
