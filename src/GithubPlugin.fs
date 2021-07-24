@@ -20,28 +20,21 @@ type GithubPlugin() =
 
     let runApiSearch = Gh.runSearchCached >> RunApiSearch
 
-    let (|SpecificSearchFormat|_|) keyword =
-        match keyword with
-        | "issues" -> Some(FindIssues)
-        | "pr"
-        | "pull" -> Some(FindPRs)
-        | "repo" -> Some(FindRepo)
-        | _ -> None
-
-    let (|GeneralSearchFormat|_|) keyword =
-        match keyword with
-        | "repos" -> Some(FindRepos)
-        | "users" -> Some(FindUsers)
-        | _ -> None
-
     let parseQuery = function
-        | GeneralSearchFormat keywordFunc::search when search.Length > 0 -> search |> String.concat " " |> keywordFunc |> runApiSearch
-        | [SpecificSearchFormat keywordFunc; UserRepoFormat search]
-        | [UserRepoFormat search; SpecificSearchFormat keywordFunc] -> search |> keywordFunc |> runApiSearch
-        | [UserRepoFormat search] -> search |> FindRepo |> runApiSearch
-        | [UserRepoFormat (u, r); IssueFormat i] -> runApiSearch (FindIssue(u, r, i))
-        | [UserReposFormat search;] -> search |> FindUserRepos|> runApiSearch
-        | search -> search |> String.concat " "|> SearchRepos |> SuggestQuery
+        | "repos" :: search                       -> runApiSearch (FindRepos (String.concat " " search))
+        | "users" :: search                       -> runApiSearch (FindUsers (String.concat " " search))
+        | [ "issues"; UserRepoFormat search ]     -> runApiSearch (FindIssues search)
+        | [ "pr";     UserRepoFormat search ]     -> runApiSearch (FindPRs search)
+        | [ "pull";   UserRepoFormat search ]     -> runApiSearch (FindPRs search)
+        | [ "repo";   UserRepoFormat search ]     -> runApiSearch (FindRepo search)
+        | [ UserRepoFormat search           ]     -> runApiSearch (FindRepo search)
+        | [ UserRepoFormat search; "issues" ]     -> runApiSearch (FindIssues search)
+        | [ UserRepoFormat search; "pr"     ]     -> runApiSearch (FindPRs search)
+        | [ UserRepoFormat search; "pull"   ]     -> runApiSearch (FindPRs search)
+        | [ UserRepoFormat (u,r); IssueFormat i ] -> runApiSearch (FindIssue (u,r,i))
+        | [ UserReposFormat user ]                -> runApiSearch (FindUserRepos user)
+        | [ search ]                              -> SuggestQuery (SearchRepos search)
+        | _                                       -> SuggestQuery DefaultSuggestion
 
     let mutable pluginContext = PluginInitContext()
 
@@ -154,13 +147,12 @@ type GithubPlugin() =
             pluginContext <- context
             Task.CompletedTask
 
-
-        member this.QueryAsync(query:Query, token: CancellationToken) =
+        member this.QueryAsync(query: Query, token: CancellationToken) =
             let ghSearch = async {
                 let! results = 
                     query.Terms
                     |> List.ofArray
-                    |> List.skip(if query.ActionKeyword = Query.GlobalPluginWildcardSign then 0 else 1)
+                    |> List.skip (if query.ActionKeyword = Query.GlobalPluginWildcardSign then 0 else 1)
                     |> this.ProcessQuery
                 
                 return results

@@ -47,7 +47,7 @@ module Cache =
         | true, (res,exp) when exp > DateTime.Now ->
             return res
         | _ ->
-            do! Async.Sleep(300)
+            do! Async.Sleep 300
             let! result = fCompute key
 
             addToCache (key, result)
