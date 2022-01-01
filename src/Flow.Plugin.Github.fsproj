@@ -27,12 +27,11 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Flow.Launcher.Plugin" Version="2.0.0" />
+    <PackageReference Include="Flow.Launcher.Plugin" Version="2.1.1" />
     <PackageReference Include="Octokit" Version="0.50.0" />
-    <PackageReference Include="Humanizer.Core" Version="2.8.26" />
+    <PackageReference Include="Humanizer.Core" Version="2.13.14" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.7.1" />
-    <PackageReference Update="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Update="FSharp.Core" Version="5.0.2" />
   </ItemGroup>
 </Project>
