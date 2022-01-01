@@ -39,7 +39,7 @@ type GithubPlugin() =
     let mutable pluginContext = PluginInitContext()
 
     let openUrl (url:string) =
-        do SharedCommands.SearchWeb.NewTabInBrowser url |> ignore
+        do pluginContext.API.OpenUrl url
         true
 
     let changeQuery (newQuery:string) (newParam:string) =
@@ -135,6 +135,7 @@ type GithubPlugin() =
             | Choice1Of2 result -> return presentApiSearchResult result
             | Choice2Of2 exn -> return presentApiSearchExn exn
         }
+
     member this.ProcessQuery terms =
         match parseQuery terms with
         | RunApiSearch fSearch -> tryRunApiSearch fSearch
@@ -150,9 +151,8 @@ type GithubPlugin() =
         member this.QueryAsync(query: Query, token: CancellationToken) =
             let ghSearch = async {
                 let! results = 
-                    query.Terms
+                    query.SearchTerms
                     |> List.ofArray
-                    |> List.skip (if query.ActionKeyword = Query.GlobalPluginWildcardSign then 0 else 1)
                     |> this.ProcessQuery
                 
                 return results
