@@ -1,5 +1,5 @@
 version: 1.2.2.{build}
-image: Visual Studio 2019
+image: Visual Studio 2022
 
 environment:
     DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
@@ -20,9 +20,12 @@ build_script:
 
 after_build:
 - ps: >-
-    Compress-Archive -Path "src\bin\Release\net5.0-windows\*" -DestinationPath "plugin.zip"
+    $zipSettings = @{
+        Path = Get-ChildItem -Path ".\src\bin\Release\*" -Exclude "*.nupkg"
+        DestinationPath = "Flow.Plugin.Github.zip"
+    }
 
-    Rename-Item plugin.zip Flow.Plugin.Github.zip
+    Compress-Archive @zipSettings
 
 artifacts:
     - path: 'src\bin\Release\*.nupkg'
