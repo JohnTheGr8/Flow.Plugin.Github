@@ -63,7 +63,7 @@ type GithubPlugin() =
         | RepoIssues issues ->
             [ for i in issues ->
                 { title    = i.Title
-                  subtitle = sprintf "issue #%d | created %s by %s" i.Number (i.CreatedAt.Humanize()) i.User.Login
+                  subtitle = sprintf "issue #%d | %d comments | created %s by %s" i.Number i.Comments (i.CreatedAt.Humanize()) i.User.Login
                   action   = fun _ -> openUrl i.HtmlUrl } ]
         | RepoIssue issue ->
             [   { title    = sprintf "#%d - %s" issue.Number issue.Title
@@ -72,7 +72,7 @@ type GithubPlugin() =
         | RepoPRs issues ->
             [ for i in issues ->
                 { title    = i.Title
-                  subtitle = sprintf "PR #%d | created %s by %s" i.Number (i.CreatedAt.Humanize()) i.User.Login
+                  subtitle = sprintf "PR #%d | %d comments | created %s by %s" i.Number i.Comments (i.CreatedAt.Humanize()) i.User.Login
                   action   = fun _ -> openUrl i.HtmlUrl } ]
         | Users users ->
             [ for u in users ->
@@ -150,11 +150,11 @@ type GithubPlugin() =
 
         member this.QueryAsync(query: Query, token: CancellationToken) =
             let ghSearch = async {
-                let! results = 
+                let! results =
                     query.SearchTerms
                     |> List.ofArray
                     |> this.ProcessQuery
-                
+
                 return results
                        |> List.map (fun r -> Result( Title = r.title, SubTitle = r.subtitle, IcoPath = "icon.png", Action = fun x -> r.action x ))
                        |> List<Result>
