@@ -160,3 +160,7 @@ type GithubPlugin() =
                        |> List<Result>
             }
             Async.StartImmediateAsTask(ghSearch, token)
+
+    interface IReloadable with
+        member this.ReloadData () =
+            Cache.clear ()

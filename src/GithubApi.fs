@@ -72,6 +72,9 @@ module Cache =
             return result
     }
 
+    let clear () = 
+        resultCache.Clear()
+
 module GithubApi =
 
     let private getClient () = 
