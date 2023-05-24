@@ -27,6 +27,15 @@ let allTests =
             result2.subtitle |> Expect.stringStarts "result 2 subtitle should start with" "Search for users matching"
         }
 
+        testTask "empty repo search" {
+            // should not return a "Search failed" error
+            let! results = plugin.ProcessQuery [ "repos" ] CancellationToken.None
+
+            let result = results |> List.tryHead |> Expect.wantSome "there should be one result"
+
+            result.title |> Expect.equal "title should match" "Search Github"
+        }
+
         testTask "repo search" {
             // should return a list of repositories
             let! res = plugin.ProcessQuery [ "repos"; "wox" ] CancellationToken.None
@@ -43,6 +52,15 @@ let allTests =
 
             (res1.title,    res2.title)    ||> Expect.notEqual "titles should not match"
             (res1.subtitle, res2.subtitle) ||> Expect.notEqual "subtitles should not match"
+        }
+
+        testTask "empty user search" {
+            // should not return a "Search failed" error
+            let! results = plugin.ProcessQuery [ "users" ] CancellationToken.None
+
+            let result = results |> List.tryHead |> Expect.wantSome "there should be one result"
+
+            result.title |> Expect.equal "title should match" "Search Github"
         }
 
         testTask "user search" {

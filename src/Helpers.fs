@@ -24,7 +24,9 @@ let (|UserReposFormat|_|) (value: string) =
     else
         None
 
-let (|CompleteQuery|BadQuery|) = function
+let (|CompleteQuery|IncompleteQuery|BadQuery|) = function
+    | "repos" :: []                               -> IncompleteQuery
+    | "users" :: []                               -> IncompleteQuery
     | "repos" :: search                           -> CompleteQuery (FindRepos (String.concat " " search))
     | "users" :: search                           -> CompleteQuery (FindUsers (String.concat " " search))
     | "issues" :: UserRepoFormat search :: []     -> CompleteQuery (FindIssues search)

@@ -88,6 +88,11 @@ type GithubPlugin() =
                   subtitle = "Search Github users with \"gh users {user-search-term}\""
                   action   = fun _ -> changeQuery "users" "" } ]
 
+    let presentIncompleteQuery =
+        [   { title = "Search Github"
+              subtitle = "type a search term"
+              action = fun _ -> false } ]
+
     /// exn -> SearchResult list
     let presentApiSearchExn (e: exn) =
         let defaultResult = { title = "Search failed"; subtitle = e.Message; action = fun _ -> false }
@@ -117,6 +122,7 @@ type GithubPlugin() =
         match terms with
         | CompleteQuery apiSearch -> tryRunApiSearch (Cache.memoize Gh.runSearch apiSearch)
         | BadQuery suggestion     -> CancellableTask.singleton (presentSuggestion suggestion)
+        | IncompleteQuery         -> CancellableTask.singleton presentIncompleteQuery
 
     interface IAsyncPlugin with
         member this.InitAsync(context: PluginInitContext) =
