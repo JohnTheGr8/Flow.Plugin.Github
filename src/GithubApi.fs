@@ -15,7 +15,7 @@ type ApiSearchResult =
     | Repos of Repository list
     | RepoIssues of Issue list
     | RepoIssue of Issue
-    | RepoPRs of PullRequest list
+    | RepoPRs of Issue list
     | Users of User list
     | RepoDetails of Repository * Issue list * Issue list
 
@@ -53,14 +53,13 @@ module Cache =
 
             match key, result with
             | FindRepo(u,r), RepoDetails(_,issues,prs) ->
+                // cache repo PRs
+                addToCache (FindPRs(u,r), RepoPRs prs)
                 // cache repo issues
                 addToCache (FindIssues(u,r), RepoIssues issues)
                 // cache every issue by number
                 for issue in issues @ prs do
                     addToCache (FindIssue (u,r,issue.Number), RepoIssue issue)
-                // cache every PR by number
-                let pullRequests = prs |> List.map (fun issue -> issue.PullRequest)
-                addToCache (FindPRs (u,r), RepoPRs pullRequests)
             | FindIssues(u,r), RepoIssues issues ->
                 // cache every issue by number
                 for issue in issues do
@@ -115,8 +114,8 @@ module GithubApi =
     }
 
     let getRepoPRs (user: string) (repo: string) = async {
-        let! data = client.PullRequest.GetAllForRepository(user, repo) |> Async.AwaitTask
-        return List.ofSeq data |> RepoPRs
+        let! data = getIssuesAndPRs user repo
+        return data |> List.filter (isNotPullRequest >> not) |> RepoPRs
     }
 
     let getRepoInfo (user: string) (repo: string) = async {
