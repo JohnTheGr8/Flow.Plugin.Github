@@ -11,24 +11,6 @@ type SearchResult = { title : string ; subtitle : string; action : ActionContext
 
 type GithubPlugin() =
 
-    let runApiSearch = Cache.memoize Gh.runSearch >> RunApiSearch
-
-    let parseQuery = function
-        | "repos" :: search                       -> runApiSearch (FindRepos (String.concat " " search))
-        | "users" :: search                       -> runApiSearch (FindUsers (String.concat " " search))
-        | [ "issues"; UserRepoFormat search ]     -> runApiSearch (FindIssues search)
-        | [ "pr";     UserRepoFormat search ]     -> runApiSearch (FindPRs search)
-        | [ "pull";   UserRepoFormat search ]     -> runApiSearch (FindPRs search)
-        | [ "repo";   UserRepoFormat search ]     -> runApiSearch (FindRepo search)
-        | [ UserRepoFormat search           ]     -> runApiSearch (FindRepo search)
-        | [ UserRepoFormat search; "issues" ]     -> runApiSearch (FindIssues search)
-        | [ UserRepoFormat search; "pr"     ]     -> runApiSearch (FindPRs search)
-        | [ UserRepoFormat search; "pull"   ]     -> runApiSearch (FindPRs search)
-        | [ UserRepoFormat (u,r); IssueFormat i ] -> runApiSearch (FindIssueOrPr (u,r,i))
-        | [ UserReposFormat user ]                -> runApiSearch (FindUserRepos user)
-        | [ search ]                              -> SuggestQuery (SearchRepos search)
-        | _                                       -> SuggestQuery DefaultSuggestion
-
     let mutable pluginContext = PluginInitContext()
 
     let openUrl (url:string) =
@@ -132,9 +114,9 @@ type GithubPlugin() =
         }
 
     member this.ProcessQuery terms =
-        match parseQuery terms with
-        | RunApiSearch fSearch -> tryRunApiSearch fSearch
-        | SuggestQuery suggestion -> presentSuggestion suggestion |> CancellableTask.singleton
+        match terms with
+        | CompleteQuery apiSearch -> tryRunApiSearch (Cache.memoize Gh.runSearch apiSearch)
+        | BadQuery suggestion     -> CancellableTask.singleton (presentSuggestion suggestion)
 
     interface IAsyncPlugin with
         member this.InitAsync(context: PluginInitContext) =

@@ -19,10 +19,6 @@ type ApiSearchResult =
     | Users of Octokit.User list
     | RepoDetails of Octokit.Repository * Octokit.Issue list * Octokit.Issue list
 
-type ActionForQuery =
-    | RunApiSearch of CancellableTask<ApiSearchResult>
-    | SuggestQuery of QuerySuggestion
-
-and QuerySuggestion =
+type QuerySuggestion =
     | SearchRepos of string
     | DefaultSuggestion

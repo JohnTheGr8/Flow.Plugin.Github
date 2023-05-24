@@ -24,6 +24,22 @@ let (|UserReposFormat|_|) (value: string) =
     else
         None
 
+let (|CompleteQuery|BadQuery|) = function
+    | "repos" :: search                           -> CompleteQuery (FindRepos (String.concat " " search))
+    | "users" :: search                           -> CompleteQuery (FindUsers (String.concat " " search))
+    | "issues" :: UserRepoFormat search :: []     -> CompleteQuery (FindIssues search)
+    | "pr"     :: UserRepoFormat search :: []     -> CompleteQuery (FindPRs search)
+    | "pull"   :: UserRepoFormat search :: []     -> CompleteQuery (FindPRs search)
+    | "repo"   :: UserRepoFormat search :: []     -> CompleteQuery (FindRepo search)
+    | UserRepoFormat search :: []                 -> CompleteQuery (FindRepo search)
+    | UserRepoFormat search :: "issues" :: []     -> CompleteQuery (FindIssues search)
+    | UserRepoFormat search :: "pr"     :: []     -> CompleteQuery (FindPRs search)
+    | UserRepoFormat search :: "pull"   :: []     -> CompleteQuery (FindPRs search)
+    | UserRepoFormat (u,r) :: IssueFormat i :: [] -> CompleteQuery (FindIssueOrPr (u,r,i))
+    | UserReposFormat user :: []                  -> CompleteQuery (FindUserRepos user)
+    | search :: []                                -> BadQuery (SearchRepos search)
+    | _                                           -> BadQuery DefaultSuggestion
+
 let toLower (s: string) = s.ToLower()
 
 let tryEnvVar var =
