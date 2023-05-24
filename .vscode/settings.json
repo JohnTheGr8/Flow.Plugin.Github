@@ -1,0 +1,12 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+    "files.exclude": {
+        "[Dd]ebug/":true,
+        "[Rr]elease/":true,
+        "**/[Bb]in/":true,
+        "**/[Oo]bj/":true,
+        ".vs/": true,
+        ".ionide/": true,
+    },
+    "FSharp.inlayHints.typeAnnotations": false
+}
