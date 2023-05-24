@@ -6,7 +6,7 @@ open System.IO
 open System.Text.RegularExpressions
 
 let (|UserRepoFormat|_|) (name:string) =
-    let m = Regex.Match(name, "^(?<user>(.+))(\/)(?<repo>(.+))$")
+    let m = Regex.Match(name, "^(?<user>[\w\.-]+)(\/)(?<repo>[\w\.-]+)$")
     if m.Success
     then Some (m.Groups.["user"].Value, m.Groups.["repo"].Value)
     else None
@@ -24,6 +24,24 @@ let (|UserReposFormat|_|) (value: string) =
     else
         None
 
+let (|RepoIssuesFormat|_|) (value: string) = 
+    let m = Regex.Match(value, "^(?<user>[\w\.-]+)(\/)(?<repo>[\w\.-]+)\/issues$")
+    if m.Success
+    then Some (m.Groups.["user"].Value, m.Groups.["repo"].Value)
+    else None
+
+let (|RepoPullsFormat|_|) (value: string) = 
+    let m = Regex.Match(value, "^(?<user>[\w\.-]+)(\/)(?<repo>[\w\.-]+)\/pulls$")
+    if m.Success
+    then Some (m.Groups.["user"].Value, m.Groups.["repo"].Value)
+    else None
+
+let (|UserRepoIssueFormat|_|) (value: string) =
+    let m = Regex.Match(value, "^(?<user>[\w\.-]+)(\/)(?<repo>[\w\.-]+)(#|\/(issue|pull)\/)(?<issue>\d+)$")
+    if m.Success
+    then Some (m.Groups.["user"].Value, m.Groups.["repo"].Value, int m.Groups.["issue"].Value)
+    else None
+
 let (|CompleteQuery|IncompleteQuery|BadQuery|) = function
     | "repos" :: []                               -> IncompleteQuery
     | "users" :: []                               -> IncompleteQuery
@@ -34,9 +52,12 @@ let (|CompleteQuery|IncompleteQuery|BadQuery|) = function
     | "pull"   :: UserRepoFormat search :: []     -> CompleteQuery (FindPRs search)
     | "repo"   :: UserRepoFormat search :: []     -> CompleteQuery (FindRepo search)
     | UserRepoFormat search :: []                 -> CompleteQuery (FindRepo search)
+    | RepoIssuesFormat search :: []               -> CompleteQuery (FindIssues search)
     | UserRepoFormat search :: "issues" :: []     -> CompleteQuery (FindIssues search)
+    | RepoPullsFormat  search :: []               -> CompleteQuery (FindPRs search)
     | UserRepoFormat search :: "pr"     :: []     -> CompleteQuery (FindPRs search)
     | UserRepoFormat search :: "pull"   :: []     -> CompleteQuery (FindPRs search)
+    | UserRepoIssueFormat (u,r,i)           :: [] -> CompleteQuery (FindIssueOrPr (u,r,i))
     | UserRepoFormat (u,r) :: IssueFormat i :: [] -> CompleteQuery (FindIssueOrPr (u,r,i))
     | UserReposFormat user :: []                  -> CompleteQuery (FindUserRepos user)
     | search :: []                                -> BadQuery (SearchRepos search)
