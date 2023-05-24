@@ -64,6 +64,10 @@ module Cache =
                 // cache every issue by number
                 for issue in issues do
                     addToCache (FindIssueOrPr (u,r,issue.Number), RepoIssueOrPr issue)
+            | FindPRs(u,r), RepoPRs pulls ->
+                // cache every PR by number
+                for pr in pulls do
+                    addToCache (FindIssueOrPr (u,r,pr.Number), RepoIssueOrPr pr)
             | _ ->
                 ()
 
