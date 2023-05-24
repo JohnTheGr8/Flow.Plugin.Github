@@ -7,8 +7,6 @@ open System.Collections.Generic
 open Humanizer
 open IcedTasks
 
-type SearchResult = { title : string ; subtitle : string; action : ActionContext -> bool }
-
 type GithubPlugin() =
 
     let mutable pluginContext = PluginInitContext()
@@ -34,90 +32,98 @@ type GithubPlugin() =
     /// ApiSearchResult -> SearchResult list
     let presentApiSearchResult = function
         | Repos [] | RepoIssues [] | RepoPRs [] | Users [] ->
-            [   { title    = "No results found"
-                  subtitle = "please try a different query"
-                  action   = fun _ -> false } ]
+            [   Result (
+                    Title    = "No results found",
+                    SubTitle = "please try a different query" ) ]
         | Repos repos ->
             [ for r in repos ->
-                { title    = r.FullName
-                  subtitle = sprintf "(★%d | %s) %s" r.StargazersCount r.Language r.Description
-                  action   = fun ctx ->
+                Result (
+                    Title    = r.FullName,
+                    SubTitle = sprintf "(★%d | %s) %s" r.StargazersCount r.Language r.Description,
+                    Action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
                                 then openUrl r.HtmlUrl
-                                else changeQuery (FindRepo (r.Owner.Login, r.Name)) } ]
+                                else changeQuery (FindRepo (r.Owner.Login, r.Name)) ) ]
         | RepoIssues issues ->
             [ for i in issues ->
-                { title    = i.Title
-                  subtitle = sprintf "issue #%d | %d comments | created %s by %s" i.Number i.Comments (i.CreatedAt.Humanize()) i.User.Login
-                  action   = fun _ -> openUrl i.HtmlUrl } ]
+                Result (
+                    Title    = i.Title,
+                    SubTitle = sprintf "issue #%d | %d comments | created %s by %s" i.Number i.Comments (i.CreatedAt.Humanize()) i.User.Login,
+                    Action   = fun _ -> openUrl i.HtmlUrl ) ]
         | RepoIssueOrPr issue ->
-            [   { title    = sprintf "#%d - %s" issue.Number issue.Title
-                  subtitle = sprintf "%A | created by %s | last updated %s" issue.State issue.User.Login (issue.UpdatedAt.Humanize())
-                  action   = fun _ -> openUrl issue.HtmlUrl } ]
+            [   Result (
+                    Title    = sprintf "#%d - %s" issue.Number issue.Title,
+                    SubTitle = sprintf "%A | created by %s | last updated %s" issue.State issue.User.Login (issue.UpdatedAt.Humanize()),
+                    Action   = fun _ -> openUrl issue.HtmlUrl ) ]
         | RepoPRs issues ->
             [ for i in issues ->
-                { title    = i.Title
-                  subtitle = sprintf "PR #%d | %d comments | created %s by %s" i.Number i.Comments (i.CreatedAt.Humanize()) i.User.Login
-                  action   = fun _ -> openUrl i.HtmlUrl } ]
+                Result (
+                    Title    = i.Title,
+                    SubTitle = sprintf "PR #%d | %d comments | created %s by %s" i.Number i.Comments (i.CreatedAt.Humanize()) i.User.Login,
+                    Action   = fun _ -> openUrl i.HtmlUrl ) ]
         | Users users ->
             [ for u in users ->
-                { title    = u.Login
-                  subtitle = u.HtmlUrl
-                  action   = fun _ -> openUrl u.HtmlUrl } ]
+                Result (
+                    Title    = u.Login,
+                    SubTitle = u.HtmlUrl,
+                    Action   = fun _ -> openUrl u.HtmlUrl ) ]
         | RepoDetails (res, issues, prs) ->
-            [   { title    = res.FullName
-                  subtitle = sprintf "(★%d | %s) %s" res.StargazersCount res.Language res.Description
-                  action   = fun _ -> openUrl res.HtmlUrl };
-                { title    = "Issues"
-                  subtitle = sprintf "%d issues open" (List.length issues)
-                  action   = fun ctx ->
+            [   Result (
+                    Title    = res.FullName,
+                    SubTitle = sprintf "(★%d | %s) %s" res.StargazersCount res.Language res.Description,
+                    Action   = fun _ -> openUrl res.HtmlUrl)
+                Result (
+                    Title    = "Issues",
+                    SubTitle = sprintf "%d issues open" (List.length issues),
+                    Action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
                                 then openUrl (res.HtmlUrl + "/issues")
-                                else changeQuery (FindIssues (res.Owner.Login, res.Name)) };
-                { title    = "Pull Requests"
-                  subtitle = sprintf "%d pull requests open" (List.length prs)
-                  action   = fun ctx ->
+                                else changeQuery (FindIssues (res.Owner.Login, res.Name)) )
+                Result (
+                    Title    = "Pull Requests",
+                    SubTitle = sprintf "%d pull requests open" (List.length prs),
+                    Action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
                                 then openUrl (res.HtmlUrl + "/pulls")
-                                else changeQuery (FindPRs (res.Owner.Login, res.Name)) } ]
+                                else changeQuery (FindPRs (res.Owner.Login, res.Name)) ) ]
 
     /// QuerySuggestion -> SearchResult list
     let presentSuggestion = function
         | SearchRepos search ->
-            [   { title    = "Search repositories"
-                  subtitle = sprintf "Search for repositories matching \"%s\"" search
-                  action   = fun _ -> changeQuery (FindRepos search) };
-                { title    = "Search users"
-                  subtitle = sprintf "Search for users matching \"%s\"" search
-                  action   = fun _ -> changeQuery (FindUsers search) } ]
+            [   Result (
+                    Title    = "Search repositories",
+                    SubTitle = sprintf "Search for repositories matching \"%s\"" search,
+                    Action   = fun _ -> changeQuery (FindRepos search) )
+                Result (
+                    Title    = "Search users",
+                    SubTitle = sprintf "Search for users matching \"%s\"" search,
+                    Action   = fun _ -> changeQuery (FindUsers search) ) ]
         | DefaultSuggestion ->
-            [   { title    = "Search repositories"
-                  subtitle = "Search Github repositories with \"gh repos {repo-search-term}\""
-                  action   = fun _ -> changeQuery (FindRepos "") };
-                { title    = "Search users"
-                  subtitle = "Search Github users with \"gh users {user-search-term}\""
-                  action   = fun _ -> changeQuery (FindUsers "") } ]
+            [   Result (
+                    Title    = "Search repositories",
+                    SubTitle = "Search Github repositories with \"gh repos {repo-search-term}\"",
+                    Action   = fun _ -> changeQuery (FindRepos "") )
+                Result (
+                    Title    = "Search users",
+                    SubTitle = "Search Github users with \"gh users {user-search-term}\"",
+                    Action   = fun _ -> changeQuery (FindUsers "") ) ]
 
     let presentIncompleteQuery =
-        [   { title = "Search Github"
-              subtitle = "type a search term"
-              action = fun _ -> false } ]
+        [ Result (
+            Title = "Search Github",
+            SubTitle = "type a search term") ]
 
     /// exn -> SearchResult list
     let presentApiSearchExn (e: exn) =
-        let defaultResult = { title = "Search failed"; subtitle = e.Message; action = fun _ -> false }
         match e with
         | null ->
-            [ defaultResult ]
+            [ Result (Title = "Search failed") ]
         | :? Octokit.RateLimitExceededException ->
-            [ { defaultResult with
-                    title = "Rate limit exceeded"
-                    subtitle = "please try again later" } ]
+            [ Result (Title = "Rate limit exceeded", SubTitle = "please try again later") ]
         | :? Octokit.NotFoundException ->
-            [ { defaultResult with
-                    subtitle = "The repository could not be found" } ]
+            [ Result (Title = "Search failed", SubTitle = "The resource could not be found") ]
         | _ ->
-            [ defaultResult ]
+            [ Result (Title = "Search failed", SubTitle = e.Message) ]
 
     let tryRunApiSearch (fSearch: CancellableTask<_>) =
         cancellableTask {
@@ -148,9 +154,10 @@ type GithubPlugin() =
                     |> List.ofArray
                     |> this.ProcessQuery
 
-                return results
-                       |> List.map (fun r -> Result( Title = r.title, SubTitle = r.subtitle, IcoPath = "icon.png", Action = fun x -> r.action x ))
-                       |> List<Result>
+                for result in results do
+                    result.IcoPath <- "icon.png"
+
+                return List<Result> results
             }
             ghSearch token
 
