@@ -40,6 +40,7 @@ type GithubPlugin() =
                 Result (
                     Title    = r.FullName,
                     SubTitle = sprintf "(★%d | %s) %s" r.StargazersCount r.Language r.Description,
+                    CopyText = r.HtmlUrl,
                     Action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
                                 then openUrl r.HtmlUrl
@@ -49,32 +50,38 @@ type GithubPlugin() =
                 Result (
                     Title    = i.Title,
                     SubTitle = sprintf "issue #%d | %d comments | created %s by %s" i.Number i.Comments (i.CreatedAt.Humanize()) i.User.Login,
+                    CopyText = i.HtmlUrl,
                     Action   = fun _ -> openUrl i.HtmlUrl ) ]
         | RepoIssueOrPr issue ->
             [   Result (
                     Title    = sprintf "#%d - %s" issue.Number issue.Title,
                     SubTitle = sprintf "%A | created by %s | last updated %s" issue.State issue.User.Login (issue.UpdatedAt.Humanize()),
+                    CopyText = issue.HtmlUrl,
                     Action   = fun _ -> openUrl issue.HtmlUrl ) ]
         | RepoPRs issues ->
             [ for i in issues ->
                 Result (
                     Title    = i.Title,
                     SubTitle = sprintf "PR #%d | %d comments | created %s by %s" i.Number i.Comments (i.CreatedAt.Humanize()) i.User.Login,
+                    CopyText = i.HtmlUrl,
                     Action   = fun _ -> openUrl i.HtmlUrl ) ]
         | Users users ->
             [ for u in users ->
                 Result (
                     Title    = u.Login,
                     SubTitle = u.HtmlUrl,
+                    CopyText = u.HtmlUrl,
                     Action   = fun _ -> openUrl u.HtmlUrl ) ]
         | RepoDetails (res, issues, prs) ->
             [   Result (
                     Title    = res.FullName,
                     SubTitle = sprintf "(★%d | %s) %s" res.StargazersCount res.Language res.Description,
+                    CopyText = res.HtmlUrl,
                     Action   = fun _ -> openUrl res.HtmlUrl)
                 Result (
                     Title    = "Issues",
                     SubTitle = sprintf "%d issues open" (List.length issues),
+                    CopyText = res.HtmlUrl + "/issues",
                     Action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
                                 then openUrl (res.HtmlUrl + "/issues")
@@ -82,6 +89,7 @@ type GithubPlugin() =
                 Result (
                     Title    = "Pull Requests",
                     SubTitle = sprintf "%d pull requests open" (List.length prs),
+                    CopyText = res.HtmlUrl + "/pulls",
                     Action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
                                 then openUrl (res.HtmlUrl + "/pulls")
