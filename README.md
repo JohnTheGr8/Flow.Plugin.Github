@@ -5,7 +5,7 @@ Github plugin for the [Flow launcher](https://github.com/Flow-Launcher/Flow.Laun
 
 ### About
 
-Search Github repositories, navigate repository issues and pull requests, directly from Wox.
+Search Github repositories, navigate repository issues and pull requests, directly from Flow-Launcher.
 
 ![demo gif](https://i.imgur.com/kHGbBQI.gif)
 
