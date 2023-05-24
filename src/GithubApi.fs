@@ -1,6 +1,8 @@
 namespace Flow.Plugin.Github
 
 open Octokit
+open System
+open System.Collections.Concurrent
 
 type ApiSearchRequest =
     | FindRepos of string
@@ -19,9 +21,24 @@ type ApiSearchResult =
     | Users of User list
     | RepoDetails of Repository * Issue list * Issue list
 
+/// Cache for all GET requests to the Github API, used by Octokit
+/// to create conditional http requests.
+type GithubApiResponseCache() =
+
+    let cache = ConcurrentDictionary<string, Octokit.Caching.CachedResponse.V1> ()
+
+    interface Octokit.Caching.IResponseCache with
+        member _.GetAsync(request) =
+            task {
+                return cache.[request.Endpoint.OriginalString]
+            }
+
+        member _.SetAsync(request, response) =
+            task {
+                do cache.[request.Endpoint.OriginalString] <- response
+            }
+
 module Cache =
-    open System
-    open System.Collections.Concurrent
 
     let private resultCache =
         ConcurrentDictionary<ApiSearchRequest, ApiSearchResult * DateTime>()
@@ -79,16 +96,17 @@ module Cache =
 
 module GithubApi =
 
-    let private getClient () = 
-        let productHeader = 
-            ProductHeaderValue "Flow.Plugin.Github"
-
-        match tryLoadGithubToken () with
-        | Some token -> GitHubClient(productHeader, Credentials = Credentials token)
-        | None -> GitHubClient productHeader
-
     let private client =
-        getClient ()
+        let credentials =
+            match tryLoadGithubToken () with
+            | Some token -> Credentials token
+            | None -> Credentials.Anonymous
+
+        GitHubClient(
+            ProductHeaderValue "Flow.Plugin.Github",
+            Credentials = credentials,
+            ResponseCache = GithubApiResponseCache()
+        )
 
     let getRepositories (search: string) = async {
         let! results = client.Search.SearchRepo (SearchRepositoriesRequest search) |> Async.AwaitTask
