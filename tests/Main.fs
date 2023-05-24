@@ -3,20 +3,21 @@ module Flow.Plugin.Github.Tests
 open Expecto
 open Expecto.Flip
 open Flow.Plugin.Github
+open System.Threading
 
 let plugin = GithubPlugin()
 
 let allTests =
     testList "all tests" [
 
-        testAsync "default query suggestions" {
-            let! results = plugin.ProcessQuery []
-            results.Length |> Expect.equal "there should be two suggestions" 2
+        testTask "default query suggestions" {
+            let! results = plugin.ProcessQuery [] CancellationToken.None
+            results |> List.length |> Expect.equal "there should be two suggestions" 2
         }
 
-        testAsync "search suggestions" {
+        testTask "search suggestions" {
             // should return search suggestions
-            let! results = plugin.ProcessQuery [ "some-search-term" ]
+            let! results = plugin.ProcessQuery [ "some-search-term" ] CancellationToken.None
             let result1 = results |> List.tryItem 0 |> Expect.wantSome "result 1 should exist"
             let result2 = results |> List.tryItem 1 |> Expect.wantSome "result 2 should exist"
 
@@ -26,16 +27,16 @@ let allTests =
             result2.subtitle |> Expect.stringStarts "result 2 subtitle should start with" "Search for users matching"
         }
 
-        testAsync "repo search" {
+        testTask "repo search" {
             // should return a list of repositories
-            let! res = plugin.ProcessQuery [ "repos"; "wox" ]
+            let! res = plugin.ProcessQuery [ "repos"; "wox" ] CancellationToken.None
             
             res |> Expect.isNonEmpty "should not be empty"
         }
 
-        testAsync "repo search with spaces" {
-            let! results1 = plugin.ProcessQuery [ "repos"; "launcher"; "flow" ]
-            let! results2 = plugin.ProcessQuery [ "repos"; "launcher"; "wox" ]
+        testTask "repo search with spaces" {
+            let! results1 = plugin.ProcessQuery [ "repos"; "launcher"; "flow" ] CancellationToken.None
+            let! results2 = plugin.ProcessQuery [ "repos"; "launcher"; "wox" ] CancellationToken.None
 
             let res1 = results1 |> List.tryHead |> Expect.wantSome "first query should return at least one result"
             let res2 = results2 |> List.tryHead |> Expect.wantSome "second query should return at least one result"
@@ -44,16 +45,16 @@ let allTests =
             (res1.subtitle, res2.subtitle) ||> Expect.notEqual "subtitles should not match"
         }
 
-        testAsync "user search" {
+        testTask "user search" {
             // should return a list of users
-            let! res = plugin.ProcessQuery [ "users"; "john" ]
+            let! res = plugin.ProcessQuery [ "users"; "john" ] CancellationToken.None
             
             res |> Expect.isNonEmpty "should not be empty"
         }
 
-        testAsync "user repo search" {
+        testTask "user repo search" {
             // should return a list of repositories owned by wox-launcher
-            let! results = plugin.ProcessQuery [ "wox-launcher/" ]
+            let! results = plugin.ProcessQuery [ "wox-launcher/" ] CancellationToken.None
             
             results |> Expect.isNonEmpty "should not be empty"
 
@@ -61,24 +62,24 @@ let allTests =
                 result.title |> Expect.stringStarts "title should start with" "Wox-launcher/"
         }
 
-        testAsync "repo issues format" {
+        testTask "repo issues format" {
             // should return a list of issues
-            let! results = plugin.ProcessQuery [ "issues"; "wox-launcher/wox" ]
+            let! results = plugin.ProcessQuery [ "issues"; "wox-launcher/wox" ] CancellationToken.None
             for result in results do
                 result.subtitle |> Expect.stringStarts "subtitle should start with" "issue #"
         }
 
-        testAsync "repo PRs format" {
+        testTask "repo PRs format" {
             // should return a list of PRs
-            let! results = plugin.ProcessQuery [ "pull"; "git/git" ]
+            let! results = plugin.ProcessQuery [ "pull"; "git/git" ] CancellationToken.None
             for result in results do
                 result.subtitle |> Expect.stringStarts "subtitle should start with" "PR #"
         }
 
-        testAsync "single repo issue format" {
+        testTask "single repo issue format" {
             // should return a single issue
             let! result = 
-                plugin.ProcessQuery [ "wox-launcher/wox"; "#977" ]
+                plugin.ProcessQuery [ "wox-launcher/wox"; "#977" ] CancellationToken.None
                 
             let testResult = 
                 result
@@ -89,9 +90,10 @@ let allTests =
             testResult.subtitle |> Expect.stringStarts "subtitle should start with" "closed | created by JohnTheGr8 | last updated"
         }
 
-        testAsync "repo details format" {
+        testTask "repo details format" {
             // should return stats/issues/PRs
-            let! results = plugin.ProcessQuery [ "repo"; "wox-launcher/wox" ]
+            let! (results: _ list) = plugin.ProcessQuery [ "repo"; "wox-launcher/wox" ] CancellationToken.None
+
             results.Length       |> Expect.equal "should have exactly 3 results" 3
             results.[0].title    |> Expect.isNotEmpty "result 1 title should not be empty"
             results.[0].subtitle |> Expect.isNotEmpty "result 1 subtitle should not be empty"
@@ -99,10 +101,10 @@ let allTests =
             results.[2].subtitle |> Expect.stringEnds "result 2 subtitle should end with" "pull requests open"
         }
 
-        testAsync "repo details alt format" {
+        testTask "repo details alt format" {
             // should return stats/issues/PRs
-            let! results1 = plugin.ProcessQuery [ "wox-launcher/wox" ]
-            let! results2 = plugin.ProcessQuery [ "repo"; "wox-launcher/wox" ]
+            let! results1 = plugin.ProcessQuery [ "wox-launcher/wox" ] CancellationToken.None
+            let! results2 = plugin.ProcessQuery [ "repo"; "wox-launcher/wox" ] CancellationToken.None
 
             for result1, result2 in List.zip results1 results2 do
                 (result1.title, result2.title)       ||> Expect.equal "titles should be equal"
@@ -111,9 +113,9 @@ let allTests =
 
         testList "bad searches" [
 
-            testAsync "invalid repo details" {
+            testTask "invalid repo details" {
                 let! result = 
-                    plugin.ProcessQuery [ "repo"; "repothat/doesntexist" ]
+                    plugin.ProcessQuery [ "repo"; "repothat/doesntexist" ] CancellationToken.None
                     
                 let testResult = 
                     result
@@ -123,9 +125,9 @@ let allTests =
                 testResult.title |> Expect.equal "title should equal" "Search failed"
             }
 
-            testAsync "invalid repo issues" {
+            testTask "invalid repo issues" {
                 let! result = 
-                    plugin.ProcessQuery [ "issues"; "repothat/doesntexist" ]
+                    plugin.ProcessQuery [ "issues"; "repothat/doesntexist" ] CancellationToken.None
                     
                 let testResult = 
                     result
@@ -135,9 +137,9 @@ let allTests =
                 testResult.title |> Expect.equal "title should equal" "Search failed"
             }
 
-            testAsync "invalid repo PRs" {
+            testTask "invalid repo PRs" {
                 let! result = 
-                    plugin.ProcessQuery [ "pr"; "repothat/doesntexist" ]
+                    plugin.ProcessQuery [ "pr"; "repothat/doesntexist" ] CancellationToken.None
                   
                 let testResult = 
                     result
@@ -147,9 +149,9 @@ let allTests =
                 testResult.title |> Expect.equal "title should equal" "Search failed"
             }
 
-            testAsync "invalid repo search" {
+            testTask "invalid repo search" {
                 let! result = 
-                    plugin.ProcessQuery [ "repos"; "repothatdoesntexist" ]
+                    plugin.ProcessQuery [ "repos"; "repothatdoesntexist" ] CancellationToken.None
                     
                 let testResult = 
                     result
@@ -159,9 +161,9 @@ let allTests =
                 testResult.title |> Expect.equal "title should equal" "No results found"
             }
 
-            testAsync "invalid user search" {
+            testTask "invalid user search" {
                 let! result = 
-                    plugin.ProcessQuery [ "users"; "userthatdoesntexist" ]
+                    plugin.ProcessQuery [ "users"; "userthatdoesntexist" ] CancellationToken.None
                 let testResult = 
                     result
                     |> List.tryExactlyOne

@@ -5,9 +5,10 @@ open System.Threading.Tasks
 open Flow.Launcher.Plugin
 open System.Collections.Generic
 open Humanizer
+open IcedTasks
 
 type ActionForQuery =
-    | RunApiSearch of Async<ApiSearchResult>
+    | RunApiSearch of CancellableTask<ApiSearchResult>
     | SuggestQuery of QuerySuggestion
 
 and QuerySuggestion =
@@ -116,7 +117,7 @@ type GithubPlugin() =
     /// exn -> SearchResult list
     let presentApiSearchExn (e: exn) =
         let defaultResult = { title = "Search failed"; subtitle = e.Message; action = fun _ -> false }
-        match e.InnerException with
+        match e with
         | null ->
             [ defaultResult ]
         | :? Octokit.RateLimitExceededException ->
@@ -129,17 +130,19 @@ type GithubPlugin() =
         | _ ->
             [ defaultResult ]
 
-    let tryRunApiSearch fSearch =
-        async {
-            match! fSearch |> Async.Catch with
-            | Choice1Of2 result -> return presentApiSearchResult result
-            | Choice2Of2 exn -> return presentApiSearchExn exn
+    let tryRunApiSearch (fSearch: CancellableTask<_>) =
+        cancellableTask {
+            try
+                let! result = fSearch
+                return presentApiSearchResult result
+            with exn ->
+                return presentApiSearchExn exn
         }
 
     member this.ProcessQuery terms =
         match parseQuery terms with
         | RunApiSearch fSearch -> tryRunApiSearch fSearch
-        | SuggestQuery suggestion -> presentSuggestion suggestion |> async.Return
+        | SuggestQuery suggestion -> presentSuggestion suggestion |> CancellableTask.singleton
 
     interface IAsyncPlugin with
         member this.InitAsync(context: PluginInitContext) =
@@ -149,7 +152,7 @@ type GithubPlugin() =
             Task.CompletedTask
 
         member this.QueryAsync(query: Query, token: CancellationToken) =
-            let ghSearch = async {
+            let ghSearch = cancellableTask {
                 let! results =
                     query.SearchTerms
                     |> List.ofArray
@@ -159,7 +162,7 @@ type GithubPlugin() =
                        |> List.map (fun r -> Result( Title = r.title, SubTitle = r.subtitle, IcoPath = "icon.png", Action = fun x -> r.action x ))
                        |> List<Result>
             }
-            Async.StartImmediateAsTask(ghSearch, token)
+            ghSearch token
 
     interface IReloadable with
         member this.ReloadData () =

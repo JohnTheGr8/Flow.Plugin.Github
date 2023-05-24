@@ -3,6 +3,7 @@ namespace Flow.Plugin.Github
 open Octokit
 open System
 open System.Collections.Concurrent
+open IcedTasks
 
 type ApiSearchRequest =
     | FindRepos of string
@@ -59,7 +60,7 @@ module Cache =
         let valueWithAge = (value, DateTime.Now.Add cacheAge)
         resultCache.TryAdd (getActualKey key, valueWithAge) |> ignore
 
-    let memoize fCompute key = async {
+    let memoize (fCompute: _ -> CancellableTask<_>) key = cancellableTask {
         match resultCache.TryGetValue (getActualKey key) with
         | true, (res,exp) when exp > DateTime.Now ->
             return res
@@ -108,48 +109,48 @@ module GithubApi =
             ResponseCache = GithubApiResponseCache()
         )
 
-    let getRepositories (search: string) = async {
-        let! results = client.Search.SearchRepo (SearchRepositoriesRequest search) |> Async.AwaitTask
+    let getRepositories (search: string) = cancellableTask {
+        let! results = client.Search.SearchRepo (SearchRepositoriesRequest search)
         return List.ofSeq results.Items |> Repos
     }
 
-    let getUsers (search: string) = async {
-        let! results = client.Search.SearchUsers(SearchUsersRequest search) |> Async.AwaitTask
+    let getUsers (search: string) = cancellableTask {
+        let! results = client.Search.SearchUsers(SearchUsersRequest search)
         return List.ofSeq results.Items |> Users
     }
 
-    let getUserRepos (owner: string) = async {
-        let! results = client.Repository.GetAllForUser owner |> Async.AwaitTask
+    let getUserRepos (owner: string) = cancellableTask {
+        let! results = client.Repository.GetAllForUser owner
         return List.ofSeq results |> List.sortByDescending (fun repo -> repo.UpdatedAt) |> Repos
     }
 
-    let getIssuesAndPRs (user: string) (repo: string) = async {
-        let! results = client.Issue.GetAllForRepository(user, repo) |> Async.AwaitTask
+    let getIssuesAndPRs (user: string) (repo: string) = cancellableTask {
+        let! results = client.Issue.GetAllForRepository(user, repo)
         return List.ofSeq results
     }
 
     let isNotPullRequest (i:Issue) = isNull i.PullRequest
 
-    let getRepoIssues user repo = async {
+    let getRepoIssues user repo = cancellableTask {
         let! data = getIssuesAndPRs user repo
         return data |> List.filter isNotPullRequest |> RepoIssues
     }
 
-    let getRepoPRs (user: string) (repo: string) = async {
+    let getRepoPRs (user: string) (repo: string) = cancellableTask {
         let! data = getIssuesAndPRs user repo
         return data |> List.filter (isNotPullRequest >> not) |> RepoPRs
     }
 
-    let getRepoInfo (user: string) (repo: string) = async {
-        let! repository = client.Repository.Get(user,repo) |> Async.AwaitTask
-        let! issuesAndPRs = getIssuesAndPRs user repo
+    let getRepoInfo (user: string) (repo: string) = cancellableTask {
+        let! repository = client.Repository.Get(user,repo)
+        and! issuesAndPRs = getIssuesAndPRs user repo
         let issues, prs = issuesAndPRs |> List.partition isNotPullRequest
 
         return RepoDetails (repository, issues, prs)
     }
 
-    let getSpecificIssue (user: string) (repo: string) (issue: int) = async {
-        let! data = client.Issue.Get(user, repo, issue) |> Async.AwaitTask
+    let getSpecificIssue (user: string) (repo: string) (issue: int) = cancellableTask {
+        let! data = client.Issue.Get(user, repo, issue)
         return RepoIssueOrPr data
     }
 
