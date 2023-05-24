@@ -7,14 +7,14 @@ type ApiSearchRequest =
     | FindUsers of string
     | FindIssues of string * string
     | FindPRs of string * string
-    | FindIssue of string * string * int
+    | FindIssueOrPr of string * string * int
     | FindRepo of string * string
     | FindUserRepos of string
 
 type ApiSearchResult =
     | Repos of Repository list
     | RepoIssues of Issue list
-    | RepoIssue of Issue
+    | RepoIssueOrPr of Issue
     | RepoPRs of Issue list
     | Users of User list
     | RepoDetails of Repository * Issue list * Issue list
@@ -34,7 +34,7 @@ module Cache =
         | FindUsers s -> FindUsers (toLower s)
         | FindIssues (u,r) -> FindIssues (toLower u, toLower r)
         | FindPRs (u,r) -> FindPRs (toLower u, toLower r)
-        | FindIssue (u,r, i) -> FindIssue (toLower u, toLower r, i)
+        | FindIssueOrPr (u,r,i) -> FindIssueOrPr (toLower u, toLower r, i)
         | FindRepo (u,r) -> FindRepo (toLower u, toLower r)
         | FindUserRepos s -> FindUserRepos (toLower s)
 
@@ -59,11 +59,11 @@ module Cache =
                 addToCache (FindIssues(u,r), RepoIssues issues)
                 // cache every issue by number
                 for issue in issues @ prs do
-                    addToCache (FindIssue (u,r,issue.Number), RepoIssue issue)
+                    addToCache (FindIssueOrPr (u,r,issue.Number), RepoIssueOrPr issue)
             | FindIssues(u,r), RepoIssues issues ->
                 // cache every issue by number
                 for issue in issues do
-                    addToCache (FindIssue (u,r,issue.Number), RepoIssue issue)
+                    addToCache (FindIssueOrPr (u,r,issue.Number), RepoIssueOrPr issue)
             | _ ->
                 ()
 
@@ -128,7 +128,7 @@ module GithubApi =
 
     let getSpecificIssue (user: string) (repo: string) (issue: int) = async {
         let! data = client.Issue.Get(user, repo, issue) |> Async.AwaitTask
-        return RepoIssue data
+        return RepoIssueOrPr data
     }
 
 module Gh =
@@ -138,7 +138,7 @@ module Gh =
         | FindUsers search              -> GithubApi.getUsers search
         | FindIssues (user, repo)       -> GithubApi.getRepoIssues user repo
         | FindPRs (user, repo)          -> GithubApi.getRepoPRs user repo
-        | FindIssue (user, repo, issue) -> GithubApi.getSpecificIssue user repo issue
+        | FindIssueOrPr (user, repo, n) -> GithubApi.getSpecificIssue user repo n
         | FindRepo (user, repo)         -> GithubApi.getRepoInfo user repo
         | FindUserRepos user            -> GithubApi.getUserRepos user
 

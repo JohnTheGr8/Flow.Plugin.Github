@@ -31,7 +31,7 @@ type GithubPlugin() =
         | [ UserRepoFormat search; "issues" ]     -> runApiSearch (FindIssues search)
         | [ UserRepoFormat search; "pr"     ]     -> runApiSearch (FindPRs search)
         | [ UserRepoFormat search; "pull"   ]     -> runApiSearch (FindPRs search)
-        | [ UserRepoFormat (u,r); IssueFormat i ] -> runApiSearch (FindIssue (u,r,i))
+        | [ UserRepoFormat (u,r); IssueFormat i ] -> runApiSearch (FindIssueOrPr (u,r,i))
         | [ UserReposFormat user ]                -> runApiSearch (FindUserRepos user)
         | [ search ]                              -> SuggestQuery (SearchRepos search)
         | _                                       -> SuggestQuery DefaultSuggestion
@@ -65,7 +65,7 @@ type GithubPlugin() =
                 { title    = i.Title
                   subtitle = sprintf "issue #%d | %d comments | created %s by %s" i.Number i.Comments (i.CreatedAt.Humanize()) i.User.Login
                   action   = fun _ -> openUrl i.HtmlUrl } ]
-        | RepoIssue issue ->
+        | RepoIssueOrPr issue ->
             [   { title    = sprintf "#%d - %s" issue.Number issue.Title
                   subtitle = sprintf "%A | created by %s | last updated %s" issue.State issue.User.Login (issue.UpdatedAt.Humanize())
                   action   = fun _ -> openUrl issue.HtmlUrl } ]
