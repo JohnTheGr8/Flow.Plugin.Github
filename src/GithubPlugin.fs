@@ -7,19 +7,11 @@ open System.Collections.Generic
 open Humanizer
 open IcedTasks
 
-type ActionForQuery =
-    | RunApiSearch of CancellableTask<ApiSearchResult>
-    | SuggestQuery of QuerySuggestion
-
-and QuerySuggestion =
-    | SearchRepos of string
-    | DefaultSuggestion
-
 type SearchResult = { title : string ; subtitle : string; action : ActionContext -> bool }
 
 type GithubPlugin() =
 
-    let runApiSearch = Gh.runSearchCached >> RunApiSearch
+    let runApiSearch = Cache.memoize Gh.runSearch >> RunApiSearch
 
     let parseQuery = function
         | "repos" :: search                       -> runApiSearch (FindRepos (String.concat " " search))

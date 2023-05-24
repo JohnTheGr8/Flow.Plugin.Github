@@ -15,8 +15,10 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Types.fs" />
     <Compile Include="Helpers.fs" />
     <Compile Include="GithubApi.fs" />
+    <Compile Include="Caching.fs" />
     <Compile Include="GithubPlugin.fs" />
   </ItemGroup>
   <ItemGroup>
