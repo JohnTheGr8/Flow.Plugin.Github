@@ -17,8 +17,18 @@ type GithubPlugin() =
         do pluginContext.API.OpenUrl url
         true
 
-    let changeQuery (newQuery:string) (newParam:string) =
-        pluginContext.API.ChangeQuery <| sprintf "%s %s %s" pluginContext.CurrentPluginMetadata.ActionKeyword newQuery newParam
+    let changeQuery queryReq =
+        let subQuery = 
+            match queryReq with 
+            | FindRepos search              -> $"repos {search}"
+            | FindUsers search              -> $"users {search}"
+            | FindIssues (user, repo)       -> $"{user}/{repo}/issues"
+            | FindPRs (user, repo)          -> $"{user}/{repo}/pulls"
+            | FindIssueOrPr (user, repo, n) -> $"{user}/{repo}#{n}"
+            | FindRepo (user, repo)         -> $"{user}/{repo}"
+            | FindUserRepos user            -> $"{user}/"
+
+        do pluginContext.API.ChangeQuery $"{pluginContext.CurrentPluginMetadata.ActionKeyword} {subQuery}"
         false
 
     /// ApiSearchResult -> SearchResult list
@@ -34,7 +44,7 @@ type GithubPlugin() =
                   action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
                                 then openUrl r.HtmlUrl
-                                else changeQuery "repo" r.FullName } ]
+                                else changeQuery (FindRepo (r.Owner.Login, r.Name)) } ]
         | RepoIssues issues ->
             [ for i in issues ->
                 { title    = i.Title
@@ -63,30 +73,30 @@ type GithubPlugin() =
                   action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
                                 then openUrl (res.HtmlUrl + "/issues")
-                                else changeQuery "issues" res.FullName };
+                                else changeQuery (FindIssues (res.Owner.Login, res.Name)) };
                 { title    = "Pull Requests"
                   subtitle = sprintf "%d pull requests open" (List.length prs)
                   action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
                                 then openUrl (res.HtmlUrl + "/pulls")
-                                else changeQuery "pr" res.FullName } ]
+                                else changeQuery (FindPRs (res.Owner.Login, res.Name)) } ]
 
     /// QuerySuggestion -> SearchResult list
     let presentSuggestion = function
         | SearchRepos search ->
             [   { title    = "Search repositories"
                   subtitle = sprintf "Search for repositories matching \"%s\"" search
-                  action   = fun _ -> changeQuery "repos" search };
+                  action   = fun _ -> changeQuery (FindRepos search) };
                 { title    = "Search users"
                   subtitle = sprintf "Search for users matching \"%s\"" search
-                  action   = fun _ -> changeQuery "users" search } ]
+                  action   = fun _ -> changeQuery (FindUsers search) } ]
         | DefaultSuggestion ->
             [   { title    = "Search repositories"
                   subtitle = "Search Github repositories with \"gh repos {repo-search-term}\""
-                  action   = fun _ -> changeQuery "repos" "" };
+                  action   = fun _ -> changeQuery (FindRepos "") };
                 { title    = "Search users"
                   subtitle = "Search Github users with \"gh users {user-search-term}\""
-                  action   = fun _ -> changeQuery "users" "" } ]
+                  action   = fun _ -> changeQuery (FindUsers "") } ]
 
     let presentIncompleteQuery =
         [   { title = "Search Github"
