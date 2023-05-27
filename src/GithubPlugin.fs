@@ -77,11 +77,13 @@ type GithubPlugin() =
                     Title    = res.FullName,
                     SubTitle = sprintf "(★%d | %s) %s" res.StargazersCount res.Language res.Description,
                     CopyText = res.HtmlUrl,
+                    Score    = 300,
                     Action   = fun _ -> openUrl res.HtmlUrl)
                 Result (
                     Title    = "Issues",
                     SubTitle = sprintf "%d issues open" (List.length issues),
                     CopyText = res.HtmlUrl + "/issues",
+                    Score    = 200,
                     Action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
                                 then openUrl (res.HtmlUrl + "/issues")
@@ -90,6 +92,7 @@ type GithubPlugin() =
                     Title    = "Pull Requests",
                     SubTitle = sprintf "%d pull requests open" (List.length prs),
                     CopyText = res.HtmlUrl + "/pulls",
+                    Score    = 100,
                     Action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
                                 then openUrl (res.HtmlUrl + "/pulls")
