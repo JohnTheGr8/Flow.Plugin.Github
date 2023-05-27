@@ -15,9 +15,9 @@ type GithubPlugin() =
         do pluginContext.API.OpenUrl url
         true
 
-    let changeQuery queryReq =
-        let subQuery = 
-            match queryReq with 
+    let createQuery request =
+        let subQuery =
+            match request with
             | FindRepos search              -> $"repos {search}"
             | FindUsers search              -> $"users {search}"
             | FindIssues (user, repo)       -> $"{user}/{repo}/issues"
@@ -26,7 +26,15 @@ type GithubPlugin() =
             | FindRepo (user, repo)         -> $"{user}/{repo}"
             | FindUserRepos user            -> $"{user}/"
 
-        do pluginContext.API.ChangeQuery $"{pluginContext.CurrentPluginMetadata.ActionKeyword} {subQuery}"
+        let keyword =
+            if isNull pluginContext.CurrentPluginMetadata
+            then "gh"
+            else pluginContext.CurrentPluginMetadata.ActionKeyword
+
+        $"{keyword} {subQuery}"
+
+    let changeQuery request =
+        do pluginContext.API.ChangeQuery (createQuery request)
         false
 
     /// ApiSearchResult -> SearchResult list
@@ -41,6 +49,7 @@ type GithubPlugin() =
                     Title    = r.FullName,
                     SubTitle = sprintf "(★%d | %s) %s" r.StargazersCount r.Language r.Description,
                     CopyText = r.HtmlUrl,
+                    AutoCompleteText = createQuery (FindRepo (r.Owner.Login, r.Name)),
                     Action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
                                 then openUrl r.HtmlUrl
@@ -71,6 +80,7 @@ type GithubPlugin() =
                     Title    = u.Login,
                     SubTitle = u.HtmlUrl,
                     CopyText = u.HtmlUrl,
+                    AutoCompleteText = createQuery (FindUserRepos u.Login),
                     Action   = fun _ -> openUrl u.HtmlUrl ) ]
         | RepoDetails (res, issues, prs) ->
             [   Result (
@@ -83,6 +93,7 @@ type GithubPlugin() =
                     Title    = "Issues",
                     SubTitle = sprintf "%d issues open" (List.length issues),
                     CopyText = res.HtmlUrl + "/issues",
+                    AutoCompleteText = createQuery (FindIssues (res.Owner.Login, res.Name)),
                     Score    = 200,
                     Action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
@@ -92,6 +103,7 @@ type GithubPlugin() =
                     Title    = "Pull Requests",
                     SubTitle = sprintf "%d pull requests open" (List.length prs),
                     CopyText = res.HtmlUrl + "/pulls",
+                    AutoCompleteText = createQuery (FindPRs (res.Owner.Login, res.Name)),
                     Score    = 100,
                     Action   = fun ctx ->
                                 if ctx.SpecialKeyState.CtrlPressed
