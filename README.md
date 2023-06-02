@@ -11,27 +11,45 @@ Search Github repositories, navigate repository issues and pull requests, direct
 
 ### Usage
 
-Search for repos: `` gh repos {repo-search-term} ``
+> note: The plugin supports many sub-query formats, use whatever suits you best...
 
-Display repository info: `` gh repo {full-repo-name} ``
+Search for repos: 
+* `` gh repos {repo-search-term} ``
 
-List repository issues: `` gh issues {full-repo-name} ``
+Search for users: 
+* `` gh users {user-search-term} ``
 
-List repository pull requests: `` gh pr {full-repo-name} ``
+List repositories by user: 
+* `` gh {owner}/ ``
 
-Search for users: `` gh users {user-search-term} ``
+Display repository info: 
+* `` gh {owner}/{repo} ``
 
-Find specific issue or pull request: `` gh {full-repo-name} #123 ``
+List repository issues: 
+* `` gh {owner}/{repo}/issues ``
+* `` gh {owner}/{repo} issues ``
+* `` gh issues {owner}/{repo} ``
 
-List repositories by user: `` gh {owner-name}/ ``
+List repository pull requests:
+* `` gh {owner}/{repo}/pulls ``
+* `` gh {owner}/{repo} pull ``
+* `` gh {owner}/{repo} pr ``
+* `` gh pull {owner}/{repo} ``
+* `` gh pr {owner}/{repo} ``
+
+Find specific issue or pull request: 
+* `` gh {owner}/{repo}#123 ``
+* `` gh {owner}/{repo} #123 ``
+* `` gh {owner}/{repo}/issue/123 ``
+* `` gh {owner}/{repo}/pull/123 ``
 
 ### Access Token
 
 To avoid rate limits from Github's API, after installing the plugin do the following:
 
 1. open Github and [generate a new personal access token](https://github.com/settings/tokens/new)
-2. open the plugin's directory, create a `github_token.txt` file and add the API token
-3. restart Wox
+2. hit `Enter` on the Rate Limit result, or manually open `%AppData%\FlowLauncher\Settings\Plugins\Flow.Plugin.Github\Settings.json`
+3. add your token in the `GithubApiToken` value and save the file
 
 ### Private Repositories
 
