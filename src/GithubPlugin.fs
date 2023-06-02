@@ -1,5 +1,8 @@
 namespace Flow.Plugin.Github
 
+open System
+open System.IO
+open System.Text.Json.Serialization
 open System.Threading
 open System.Threading.Tasks
 open Flow.Launcher.Plugin
@@ -7,9 +10,18 @@ open System.Collections.Generic
 open Humanizer
 open IcedTasks
 
+type Settings() =
+    [<JsonInclude>]
+    member val GithubApiToken : string = "" with get, set
+
 type GithubPlugin() =
 
     let mutable pluginContext = PluginInitContext()
+
+    let mutable pluginSettings = Settings()
+
+    let getSettingsFilePath () =
+        Path.Combine (pluginContext.CurrentPluginMetadata.PluginDirectory, "..", "..", "Settings", "Plugins", "Flow.Plugin.Github", "Settings.json")
 
     let openUrl (url:string) =
         do pluginContext.API.OpenUrl url
@@ -157,6 +169,25 @@ type GithubPlugin() =
                 return presentApiSearchExn exn
         }
 
+    member this.CheckSavedPluginSettings =
+        let mutable lastCheck = DateTime.Today
+
+        fun () ->
+            let settingsFilePath = getSettingsFilePath ()
+
+            if File.Exists settingsFilePath then
+                let actualLwt = File.GetLastWriteTimeUtc settingsFilePath
+
+                if lastCheck <> actualLwt then
+                    pluginSettings <- pluginContext.API.LoadSettingJsonStorage<Settings>()
+                    lastCheck <- actualLwt
+                    do GithubApi.setApiToken pluginSettings.GithubApiToken
+            else
+                // settings file should be created with defaults by calling LoadSettingJsonStorage
+                pluginSettings <- pluginContext.API.LoadSettingJsonStorage<Settings>()
+                lastCheck <- File.GetLastWriteTimeUtc settingsFilePath
+                do GithubApi.setApiToken pluginSettings.GithubApiToken
+
     member this.ProcessQuery terms =
         match terms with
         | CompleteQuery apiSearch -> tryRunApiSearch (Cache.memoize Gh.runSearch apiSearch)
@@ -165,24 +196,27 @@ type GithubPlugin() =
 
     interface IAsyncPlugin with
         member this.InitAsync(context: PluginInitContext) =
-            Helpers.githubTokenFileDir <- context.CurrentPluginMetadata.PluginDirectory
 
             pluginContext <- context
+
+            // check if the settings file has been modified
+            do this.CheckSavedPluginSettings()
+
             Task.CompletedTask
 
         member this.QueryAsync(query: Query, token: CancellationToken) =
-            let ghSearch = cancellableTask {
+            task {
+                // check if the settings file has been modified
+                do this.CheckSavedPluginSettings()
+
                 let! results =
-                    query.SearchTerms
-                    |> List.ofArray
-                    |> this.ProcessQuery
+                    this.ProcessQuery (List.ofArray query.SearchTerms) token
 
                 for result in results do
                     result.IcoPath <- "icon.png"
 
                 return List<Result> results
             }
-            ghSearch token
 
     interface IReloadable with
         member this.ReloadData () =

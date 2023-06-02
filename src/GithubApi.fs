@@ -26,7 +26,7 @@ module GithubApi =
 
     let private client =
         let credentials =
-            match tryLoadGithubToken () with
+            match tryEnvVar "GITHUB_API_TOKEN" with
             | Some token -> Credentials token
             | None -> Credentials.Anonymous
 
@@ -35,6 +35,10 @@ module GithubApi =
             Credentials = credentials,
             ResponseCache = GithubApiResponseCache()
         )
+
+    let setApiToken (apiToken: string) =
+        if not (String.IsNullOrWhiteSpace apiToken) then
+            client.Credentials <- Credentials apiToken
 
     let getRepositories (search: string) = cancellableTask {
         let! results = client.Search.SearchRepo (SearchRepositoriesRequest search)

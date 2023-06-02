@@ -1,7 +1,5 @@
 namespace Flow.Plugin.Github
 
-open IcedTasks
-
 type ApiSearchRequest =
     | FindRepos of string
     | FindUsers of string
