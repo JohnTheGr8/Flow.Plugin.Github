@@ -27,6 +27,10 @@ type GithubPlugin() =
         do pluginContext.API.OpenUrl url
         true
 
+    let openSettingsFile () =
+        do pluginContext.API.ShellRun(getSettingsFilePath ())
+        false
+
     let createQuery request =
         let subQuery =
             match request with
@@ -154,9 +158,19 @@ type GithubPlugin() =
         | null ->
             [ Result (Title = "Search failed") ]
         | :? Octokit.RateLimitExceededException ->
-            [ Result (Title = "Rate limit exceeded", SubTitle = "please try again later") ]
+            [ Result (
+                Title = "Rate limit exceeded",
+                SubTitle = "select to set a Github API key or try again later",
+                Action   = fun _ -> openSettingsFile ()) ]
+        | :? Octokit.AuthorizationException ->
+            [ Result (
+                Title = "Authorization failed",
+                SubTitle = "select to update to a valid Github API key",
+                Action   = fun _ -> openSettingsFile ()) ]
         | :? Octokit.NotFoundException ->
-            [ Result (Title = "Search failed", SubTitle = "The resource could not be found") ]
+            [ Result (
+                Title = "Search failed",
+                SubTitle = "The resource could not be found") ]
         | _ ->
             [ Result (Title = "Search failed", SubTitle = e.Message) ]
 
