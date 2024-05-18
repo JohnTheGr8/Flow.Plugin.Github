@@ -6,7 +6,7 @@ environment:
     DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
     GITHUB_API_TOKEN:
-        secure: saOmp9u7Yu7HRg2TONypwB686Ijh/WdWo6SVfE0RNtfKENnT4XpCdEa8pzxVaAK5McU/H0nDJOsjZ/HZ5S+vv6DFgkf6HFOqLEQ84H74O6eFHaqJ+3IDnpqZNBk/+7x6
+        secure: saOmp9u7Yu7HRg2TONypwHOF1PbiQPRuvUPL3l6/zhpwLW3TPwxmx+GKJgewLkB2MAgYIrB7KhRluslCBPSfF1c4n1T3kDA3bx6ahF7Joe9fril7w9Tc5YsjUgNHxirp
 
 before_build:
     - ps: dotnet --info
