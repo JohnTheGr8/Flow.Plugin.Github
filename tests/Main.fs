@@ -196,4 +196,4 @@ let allTests =
 
 [<EntryPoint>]
 let main argv =
-    Tests.runTestsWithArgs defaultConfig argv allTests
+    Tests.runTestsWithCLIArgs [] argv allTests

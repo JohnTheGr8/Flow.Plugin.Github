@@ -9,6 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\src\Flow.Plugin.Github.fsproj" />
-    <PackageReference Include="Expecto" Version="9.0.2" />
+    <PackageReference Include="Expecto" Version="10.2.1" />
+    <PackageReference Update="FSharp.Core" Version="8.0.300" />
   </ItemGroup>
 </Project>
